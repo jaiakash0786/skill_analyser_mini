@@ -1,0 +1,13 @@
+{
+  "java": ["java", "jsp", "servlet", "jsp & servlet"],
+  "javascript": ["javascript", "js"],
+  "python": ["python"],
+  "cpp": ["c++", "cpp"],
+  "c": ["c"],
+  "frontend": ["frontend web", "html", "css"],
+  "full_stack": ["full stack web development", "mern stack", "full stack"],
+  "mongodb": ["mongodb"],
+  "sql": ["mysql", "oracle", "sql"],
+  "git": ["git", "github"],
+  "backend": ["backend", "rest api", "api development"]
+}

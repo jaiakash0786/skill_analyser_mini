@@ -1,0 +1,19 @@
+{
+  "javascript": ["javascript", "js"],
+  "java": ["java", "jsp", "servlet"],
+  "python": ["python"],
+  "c": ["c"],
+  "cpp": ["c++", "cpp"],
+  "nodejs": ["node", "nodejs", "node.js"],
+  "react": ["react", "reactjs"],
+  "express": ["express", "expressjs"],
+  "mongodb": ["mongodb", "mongo"],
+  "sql": ["sql", "mysql", "oracle", "postgres"],
+  "rest_api": ["rest api", "restful", "api development"],
+  "backend_development": ["backend development", "server side"],
+  "frontend_development": ["frontend", "frontend development"],
+  "system_design": ["system design"],
+  "docker": ["docker", "containerization"],
+  "git": ["git", "github", "version control"],
+  "full_stack": ["full stack", "full stack development"]
+}
