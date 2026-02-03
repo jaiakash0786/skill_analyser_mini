@@ -10,6 +10,8 @@ from learning_path_generator import generate_learning_path
 from role_detector import detect_roles
 
 
+
+
 # ================= CONFIG =================
 RESUME_PATH = "resumes/resume_0863.pdf"
 
