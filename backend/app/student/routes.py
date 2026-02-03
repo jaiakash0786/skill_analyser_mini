@@ -86,3 +86,41 @@ def upload_resume(
         "analysis_id": analysis.id,
         "analysis": ai_result
     }
+@router.get("/resume/{resume_id}")
+def get_resume_analysis(
+        resume_id: int,
+        current_user: dict = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ):
+        # 1️⃣ Get logged-in user
+        db_user = db.query(User).filter(
+            User.email == current_user["sub"]
+        ).first()
+
+        if not db_user:
+            return {"error": "User not found"}
+
+        # 2️⃣ Ensure resume belongs to this user
+        resume = db.query(Resume).filter(
+            Resume.id == resume_id,
+            Resume.user_id == db_user.id
+        ).first()
+
+        if not resume:
+            return {"error": "Resume not found or access denied"}
+
+        # 3️⃣ Fetch analysis result
+        analysis = db.query(AnalysisResult).filter(
+            AnalysisResult.resume_id == resume.id
+        ).first()
+
+        if not analysis:
+            return {"error": "Analysis not found for this resume"}
+
+        # 4️⃣ Return stored AI result
+        return {
+            "resume_id": resume.id,
+            "filename": resume.original_filename,
+            "uploaded_at": resume.uploaded_at,
+            "analysis": analysis.result
+        }

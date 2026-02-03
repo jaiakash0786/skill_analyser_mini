@@ -8,6 +8,7 @@ from backend.app.models.resume import Resume
 
 from fastapi.openapi.utils import get_openapi
 from backend.app.student.routes import router as student_router
+from backend.app.recruiter.routes import router as recruiter_router
 from backend.app.models.analysis import AnalysisResult
 from backend.app.auth.routes import router as auth_router
 
@@ -21,6 +22,8 @@ Base.metadata.create_all(bind=engine)
 # STEP 2: Register routers
 app.include_router(auth_router)
 app.include_router(student_router)
+
+app.include_router(recruiter_router)
 
 # STEP 3: Add Bearer token support to Swagger UI
 def custom_openapi():
