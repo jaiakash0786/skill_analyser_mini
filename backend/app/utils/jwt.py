@@ -1,0 +1,27 @@
+from datetime import datetime, timedelta
+from jose import jwt
+import os
+from jose import JWTError
+# TEMP secret (move to .env later)
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM =os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES =int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+
+
+def verify_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
+
+def create_access_token(data: dict, expires_delta: int | None = None):
+    to_encode = data.copy()
+
+    expire = datetime.utcnow() + timedelta(
+        minutes=expires_delta or ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    to_encode.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
