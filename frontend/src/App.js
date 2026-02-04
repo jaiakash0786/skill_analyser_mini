@@ -1,24 +1,46 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+
+import Login from "./pages/Login";
+import StudentDashboard from "./pages/StudentDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import RecruiterDashboard from "./pages/RecruiterDashboard";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <div style={{ padding: "20px" }}>
+        <h1>Mimini AI Resume Platform</h1>
+
+        <nav style={{ marginBottom: "20px" }}>
+          <Link to="/login">Login</Link> |{" "}
+          <Link to="/student">Student</Link> |{" "}
+          <Link to="/recruiter">Recruiter</Link>
+        </nav>
+
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+  path="/student"
+  element={
+    <ProtectedRoute>
+      <StudentDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/recruiter"
+  element={
+    <ProtectedRoute>
+      <RecruiterDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 
