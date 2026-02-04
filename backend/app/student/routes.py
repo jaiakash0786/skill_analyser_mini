@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File
 import os
 import shutil
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from backend.app.auth.dependencies import get_current_user
 from backend.app.db.database import SessionLocal
@@ -17,6 +18,10 @@ router = APIRouter(
 )
 
 
+class RoleSelectionRequest(BaseModel):
+    target_role: str
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -24,13 +29,13 @@ def get_db():
     finally:
         db.close()
 
+
 @router.post("/resume/upload")
 def upload_resume(
     resume: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # ---------- Save file ----------
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -39,7 +44,6 @@ def upload_resume(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)
 
-    # ---------- Get user ----------
     db_user = db.query(User).filter(
         User.email == current_user["sub"]
     ).first()
@@ -47,7 +51,6 @@ def upload_resume(
     if not db_user:
         return {"error": "User not found"}
 
-    # ---------- Save resume ----------
     new_resume = Resume(
         user_id=db_user.id,
         file_path=file_path,
@@ -58,16 +61,13 @@ def upload_resume(
     db.commit()
     db.refresh(new_resume)
 
-    # 🔥 CLOSE DB SESSION BEFORE PIPELINE
     db.close()
 
-    # ---------- Run AI pipeline (NO DB HERE) ----------
     ai_result = run_pipeline(
         resume_path=file_path,
-        target_domain="Web Development"
+        target_role=None
     )
 
-    # ---------- NEW DB SESSION ----------
     db = SessionLocal()
 
     analysis = AnalysisResult(
@@ -81,49 +81,99 @@ def upload_resume(
     db.close()
 
     return {
-        "message": "Resume uploaded and analyzed successfully",
+        "message": "Resume uploaded successfully. Select a role to evaluate ATS.",
         "resume_id": new_resume.id,
         "analysis_id": analysis.id,
         "analysis": ai_result
     }
+
+
+@router.post("/resume/{resume_id}/evaluate")
+def evaluate_resume_for_role(
+    resume_id: int,
+    payload: RoleSelectionRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    db_user = db.query(User).filter(
+        User.email == current_user["sub"]
+    ).first()
+
+    if not db_user:
+        return {"error": "User not found"}
+
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id,
+        Resume.user_id == db_user.id
+    ).first()
+
+    if not resume:
+        return {"error": "Resume not found or access denied"}
+
+    result = run_pipeline(
+        resume_path=resume.file_path,
+        target_role=payload.target_role
+    )
+
+    analysis = db.query(AnalysisResult).filter(
+        AnalysisResult.resume_id == resume.id
+    ).first()
+
+    if analysis:
+        analysis.result = result
+    else:
+        analysis = AnalysisResult(
+            resume_id=resume.id,
+            result=result
+        )
+        db.add(analysis)
+
+    db.commit()
+    db.refresh(analysis)
+
+    return {
+        "target_role": payload.target_role,
+        "ats": result.get("ats"),
+        "learning_path": result.get("learning_path")
+    }
+
+
 @router.get("/resume/{resume_id}")
 def get_resume_analysis(
-        resume_id: int,
-        current_user: dict = Depends(get_current_user),
-        db: Session = Depends(get_db)
-    ):
-        # 1️⃣ Get logged-in user
-        db_user = db.query(User).filter(
-            User.email == current_user["sub"]
-        ).first()
+    resume_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    db_user = db.query(User).filter(
+        User.email == current_user["sub"]
+    ).first()
 
-        if not db_user:
-            return {"error": "User not found"}
+    if not db_user:
+        return {"error": "User not found"}
 
-        # 2️⃣ Ensure resume belongs to this user
-        resume = db.query(Resume).filter(
-            Resume.id == resume_id,
-            Resume.user_id == db_user.id
-        ).first()
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id,
+        Resume.user_id == db_user.id
+    ).first()
 
-        if not resume:
-            return {"error": "Resume not found or access denied"}
+    if not resume:
+        return {"error": "Resume not found or access denied"}
 
-        # 3️⃣ Fetch analysis result
-        analysis = db.query(AnalysisResult).filter(
-            AnalysisResult.resume_id == resume.id
-        ).first()
+    analysis = db.query(AnalysisResult).filter(
+        AnalysisResult.resume_id == resume.id
+    ).first()
 
-        if not analysis:
-            return {"error": "Analysis not found for this resume"}
+    if not analysis:
+        return {"error": "Analysis not found for this resume"}
 
-        # 4️⃣ Return stored AI result
-        return {
-            "resume_id": resume.id,
-            "filename": resume.original_filename,
-            "uploaded_at": resume.uploaded_at,
-            "analysis": analysis.result
-        }
+    return {
+        "resume_id": resume.id,
+        "filename": resume.original_filename,
+        "uploaded_at": resume.uploaded_at,
+        "analysis": analysis.result
+    }
+
+
 @router.get("/resumes")
 def list_my_resumes(
     current_user: dict = Depends(get_current_user),

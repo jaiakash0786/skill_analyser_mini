@@ -8,6 +8,11 @@ function StudentDashboard() {
   const [file, setFile] = useState(null);
   const [uploadMessage, setUploadMessage] = useState("");
 
+  const [roles, setRoles] = useState([]);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [evaluation, setEvaluation] = useState(null);
+  const [selectedResumeId, setSelectedResumeId] = useState(null);
+
   const fetchResumes = async () => {
     try {
       const response = await fetch(
@@ -69,10 +74,7 @@ function StudentDashboard() {
       }
 
       setUploadMessage("Resume uploaded successfully ✅");
-
       setFile(null);
-
-      // 🔥 ALWAYS refetch from backend
       fetchResumes();
 
     } catch {
@@ -81,6 +83,8 @@ function StudentDashboard() {
   };
 
   const fetchAnalysis = async (resumeId) => {
+    setSelectedResumeId(resumeId);
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/student/resume/${resumeId}`,
@@ -99,6 +103,42 @@ function StudentDashboard() {
       }
 
       setSelectedAnalysis(data);
+
+      // 🔥 Expect roles only initially
+      setRoles(data.analysis?.roles || []);
+      setEvaluation(null);
+      setSelectedRole(null);
+
+    } catch {
+      alert("Server error");
+    }
+  };
+
+  const handleRoleSelection = async (role) => {
+    setSelectedRole(role);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/student/resume/${selectedResumeId}/evaluate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({ target_role: role })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert("Failed to evaluate resume for selected role");
+        return;
+      }
+
+      setEvaluation(data);
+
     } catch {
       alert("Server error");
     }
@@ -151,32 +191,44 @@ function StudentDashboard() {
         </ul>
       )}
 
-      {selectedAnalysis && (
-        <div style={{ marginTop: "30px" }}>
-          <h3>ATS Analysis</h3>
+      {/* ROLE SELECTION */}
+      {roles.length > 0 && (
+        <div style={{ marginTop: "20px" }}>
+          <h3>Select a Target Role</h3>
 
-          <p>
-            <strong>Resume:</strong> {selectedAnalysis.filename}
-          </p>
+          {roles.map((r, idx) => (
+            <button
+              key={idx}
+              style={{ marginRight: "10px" }}
+              onClick={() => handleRoleSelection(r.role)}
+            >
+              {r.role} ({Math.round(r.confidence * 100)}%)
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ATS AFTER ROLE SELECTION */}
+      {evaluation && (
+        <div style={{ marginTop: "30px" }}>
+          <h3>ATS Evaluation — {evaluation.target_role}</h3>
 
           <p>
             <strong>ATS Score:</strong>{" "}
-            {selectedAnalysis.analysis?.ats?.ats_score ?? "N/A"}
+            {evaluation.ats?.ats_score ?? "N/A"}
           </p>
-
-          <h4>Suggested Roles</h4>
-          <ul>
-            {selectedAnalysis.analysis?.roles?.map((r, idx) => (
-              <li key={idx}>{r.role}</li>
-            ))}
-          </ul>
 
           <h4>Missing Skills</h4>
           <ul>
-            {selectedAnalysis.analysis?.ats?.missing_skills?.map((s, idx) => (
+            {(evaluation.ats?.missing_skills?.core ||
+              evaluation.ats?.missing_skills ||
+              []).map((s, idx) => (
               <li key={idx}>{s}</li>
             ))}
           </ul>
+
+          <h4>Learning Path</h4>
+          <pre>{JSON.stringify(evaluation.learning_path, null, 2)}</pre>
         </div>
       )}
     </div>

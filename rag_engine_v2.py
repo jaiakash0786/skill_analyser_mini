@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 class MetadataRAGEngine:
     def __init__(self, docs_path="rag/documents"):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer("all-MiniLM-L6-v2",device="cpu")
         self.text_chunks = []
         self.metadata = []
         self.index = None

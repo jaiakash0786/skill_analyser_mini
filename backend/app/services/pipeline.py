@@ -1,16 +1,3 @@
-import json
-
-from resume_reader import read_resume
-from resume_parser import parse_resume_with_llm
-from services.skill_normalizer import normalize_skills
-from rag_engine_v2 import MetadataRAGEngine
-
-from ats_evaluator import evaluate_ats
-from learning_path_generator import generate_learning_path
-from role_detector import detect_roles
-from pathlib import Path
-
-# Import your existing AI pipeline entry
 from resume_reader import read_resume
 from resume_parser import parse_resume_with_llm
 from services.skill_normalizer import normalize_skills
@@ -20,7 +7,24 @@ from ats_evaluator import evaluate_ats
 from learning_path_generator import generate_learning_path
 
 
-def run_pipeline(resume_path: str, target_domain: str = "Web Development"):
+def infer_domain(role_name: str) -> str:
+    role = role_name.lower()
+
+    if "frontend" in role:
+        return "Web Development"
+    if "backend" in role:
+        return "Web Development"
+    if "full stack" in role:
+        return "Web Development"
+    if "data" in role:
+        return "Data Science"
+    if "ml" in role or "machine learning" in role:
+        return "Machine Learning"
+
+    return "Software Engineering"
+
+
+def run_pipeline(resume_path: str, target_role: str | None = None):
     rag = MetadataRAGEngine()
 
     resume_text = read_resume(resume_path)
@@ -35,12 +39,23 @@ def run_pipeline(resume_path: str, target_domain: str = "Web Development"):
 
     roles = detect_roles(parsed_resume, role_context)
 
-    top_role = roles[0]["role"]
-    role_key = top_role.lower().replace(" ", "_")
-    domain_key = target_domain.lower().replace(" ", "_")
+    if target_role is None:
+        return {
+            "roles": roles
+        }
+
+    selected_role = next(
+        (r["role"] for r in roles if r["role"].lower() == target_role.lower()),
+        target_role
+    )
+
+    domain = infer_domain(selected_role)
+
+    role_key = selected_role.lower().replace(" ", "_")
+    domain_key = domain.lower().replace(" ", "_")
 
     rag_context = rag.retrieve(
-        query=f"{top_role} {target_domain} ATS requirements",
+        query=f"{selected_role} {domain} ATS requirements",
         role=role_key,
         domain=domain_key,
         doc_types=["roles", "domains", "ats"],
@@ -50,24 +65,33 @@ def run_pipeline(resume_path: str, target_domain: str = "Web Development"):
     ats = evaluate_ats(
         resume_data=parsed_resume,
         rag_context=rag_context,
-        target_role=f"{top_role} ({target_domain})"
+        target_role=f"{selected_role} ({domain})"
     )
 
     learning = None
-    if ats.get("missing_skills"):
+    missing_skills = ats.get("missing_skills", [])
+
+    if isinstance(missing_skills, dict):
+        core_gaps = missing_skills.get("core", [])
+    else:
+        core_gaps = missing_skills
+
+    if core_gaps:
         learning_ctx = rag.retrieve(
-            query=" ".join(ats["missing_skills"]),
+            query=" ".join(core_gaps),
             doc_types=["skills", "learning"],
             top_k=5
         )
+
         learning = generate_learning_path(
-            ats["missing_skills"],
+            core_gaps,
             learning_ctx,
-            f"{top_role} ({target_domain})"
+            f"{selected_role} ({domain})"
         )
 
     return {
         "roles": roles,
+        "target_role": selected_role,
         "ats": ats,
         "learning_path": learning
     }
