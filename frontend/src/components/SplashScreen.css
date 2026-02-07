@@ -1,0 +1,50 @@
+
+
+.splash-container {
+  height: 100vh;
+  width: 100vw;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: #000;
+  overflow: hidden;
+}
+
+
+.logo-spin {
+  width: 140px;
+  animation: rotateLogo 1.0s linear infinite;
+}
+
+@keyframes rotateLogo {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.brand-fade {
+  width: 460px;              /* was 380px */
+  max-width: 92%;
+
+  animation: fadeInScale .6s ease forwards;
+
+ 
+  filter: brightness(0.95) contrast(1.05);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

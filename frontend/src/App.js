@@ -1,45 +1,63 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import StudentDashboard from "./pages/StudentDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
-
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from "./components/Navbar";
+import SplashScreen from "./components/SplashScreen";
+
 function App() {
+
+  const [loading, setLoading] = useState(true);
+
+  // Show Splash FIRST
+  if (loading) {
+    return (
+      <SplashScreen onFinish={() => setLoading(false)} />
+    );
+  }
+
   return (
     <BrowserRouter>
-      <div style={{ padding: "20px" }}>
-        <h1>Mimini AI Resume Platform</h1>
 
-        <nav style={{ marginBottom: "20px" }}>
-          <Link to="/login">Login</Link> |{" "}
-          <Link to="/student">Student</Link> |{" "}
-          <Link to="/recruiter">Recruiter</Link>
-        </nav>
+      {/* Global Navbar */}
+      <Navbar />
 
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-  path="/student"
-  element={
-    <ProtectedRoute>
-      <StudentDashboard />
-    </ProtectedRoute>
-  }
-/>
+      <Routes>
 
-<Route
-  path="/recruiter"
-  element={
-    <ProtectedRoute>
-      <RecruiterDashboard />
-    </ProtectedRoute>
-  }
-/>
+        {/* Default Route */}
+        <Route path="/" element={<Navigate to="/login" />} />
 
-        </Routes>
-      </div>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Protected Student */}
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Recruiter */}
+        <Route
+          path="/recruiter"
+          element={
+            <ProtectedRoute>
+              <RecruiterDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
+
     </BrowserRouter>
   );
 }

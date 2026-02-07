@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getToken } from "../utils/auth";
+import "./RecruiterDashboard.css";
 
 function RecruiterDashboard() {
   const [allCandidates, setAllCandidates] = useState([]);
@@ -155,17 +156,33 @@ function RecruiterDashboard() {
   };
 
   const scoreColor = (score) => {
-    if (!score) return "black";
-    if (score >= 75) return "green";
-    if (score >= 50) return "orange";
-    return "red";
+    if (!score) return "#cbd5e1";
+    if (score >= 75) return "#22c55e";
+    if (score >= 50) return "#f59e0b";
+    return "#ef4444";
   };
 
-  return (
-    <div>
-      <h2>Recruiter Dashboard</h2>
+  /* ✅ Scroll lock when modal opens */
+  useEffect(() => {
+    if (selectedAnalysis) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
 
-      <div style={{ marginBottom: "20px" }}>
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [selectedAnalysis]);
+
+  return (
+    <div className="recruiter-shell">
+
+      <div className="recruiter-header">
+        <h2>Recruiter Dashboard</h2>
+      </div>
+
+      <div className="filter-box">
         <h4>Filters</h4>
 
         <input
@@ -173,7 +190,6 @@ function RecruiterDashboard() {
           placeholder="Min ATS"
           value={minAts}
           onChange={(e) => setMinAts(e.target.value)}
-          style={{ marginRight: "10px" }}
         />
 
         <input
@@ -181,35 +197,26 @@ function RecruiterDashboard() {
           placeholder="Role (e.g. Backend Engineer)"
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          style={{ marginRight: "10px", width: "220px" }}
         />
 
         <input
           type="text"
-          placeholder="Skills (e.g. react,javascript)"
+          placeholder="Skills (react,javascript)"
           value={skillFilter}
           onChange={(e) => setSkillFilter(e.target.value)}
-          style={{ marginRight: "10px", width: "240px" }}
         />
 
         <button onClick={applyFilters}>Apply Filters</button>
-
-        <button
-          style={{ marginLeft: "10px" }}
-          onClick={clearFilters}
-        >
-          Clear
-        </button>
+        <button onClick={clearFilters}>Clear</button>
       </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
+      {error && <p className="error-text">{error}</p>}
       {loading && <p>Loading...</p>}
 
       {candidates.length === 0 && !loading ? (
         <p>No candidates found.</p>
       ) : (
-        <table border="1" cellPadding="8">
+        <table className="candidate-table">
           <thead>
             <tr>
               <th>Candidate Email</th>
@@ -217,6 +224,7 @@ function RecruiterDashboard() {
               <th>ATS Score</th>
             </tr>
           </thead>
+
           <tbody>
             {candidates.map((c) => (
               <tr key={c.resume_id}>
@@ -242,48 +250,64 @@ function RecruiterDashboard() {
         </table>
       )}
 
+      {/* ✅ REAL MODAL */}
       {selectedAnalysis && (
-        <div style={{ marginTop: "30px" }}>
-          <h3>Candidate Analysis</h3>
-
-          <p>
-            <strong>Email:</strong> {selectedAnalysis.candidate_email}
-          </p>
-
-          <p>
-            <strong>ATS Score:</strong>{" "}
-            <span
-              style={{
-                color: scoreColor(
-                  selectedAnalysis.analysis?.ats?.ats_score
-                ),
-                fontWeight: "bold"
-              }}
+        <div
+          className="popup-overlay"
+          onClick={() => setSelectedAnalysis(null)}
+        >
+          <div
+            className="analysis-popup"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close-btn"
+              onClick={() => setSelectedAnalysis(null)}
             >
-              {selectedAnalysis.analysis?.ats?.ats_score ?? "N/A"}
-            </span>
-          </p>
+              ✕
+            </button>
 
-          <h4>Suggested Roles</h4>
-          <ul>
-            {selectedAnalysis.analysis?.roles?.map((r, idx) => (
-              <li key={idx}>{r.role}</li>
-            ))}
-          </ul>
+            <h3>Candidate Analysis</h3>
 
-          <h4>Matched Skills</h4>
-          <ul>
-            {selectedAnalysis.analysis?.ats?.matched_skills?.map((s, idx) => (
-              <li key={idx}>{s}</li>
-            ))}
-          </ul>
+            <p>
+              <strong>Email:</strong> {selectedAnalysis.candidate_email}
+            </p>
 
-          <h4>Missing Skills</h4>
-          <ul>
-            {selectedAnalysis.analysis?.ats?.missing_skills?.map((s, idx) => (
-              <li key={idx}>{s}</li>
-            ))}
-          </ul>
+            <p>
+              <strong>ATS Score:</strong>{" "}
+              <span
+                style={{
+                  color: scoreColor(
+                    selectedAnalysis.analysis?.ats?.ats_score
+                  )
+                }}
+              >
+                {selectedAnalysis.analysis?.ats?.ats_score ?? "N/A"}
+              </span>
+            </p>
+
+            <h4>Suggested Roles</h4>
+            <ul>
+              {selectedAnalysis.analysis?.roles?.map((r, idx) => (
+                <li key={idx}>{r.role}</li>
+              ))}
+            </ul>
+
+            <h4>Matched Skills</h4>
+            <ul>
+              {selectedAnalysis.analysis?.ats?.matched_skills?.map((s, idx) => (
+                <li key={idx}>{s}</li>
+              ))}
+            </ul>
+
+            <h4>Missing Skills</h4>
+            <ul>
+              {selectedAnalysis.analysis?.ats?.missing_skills?.map((s, idx) => (
+                <li key={idx}>{s}</li>
+              ))}
+            </ul>
+
+          </div>
         </div>
       )}
     </div>

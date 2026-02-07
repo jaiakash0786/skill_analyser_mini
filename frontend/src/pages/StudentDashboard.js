@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getToken } from "../utils/auth";
+import "./StudentDashboard.css";
 
 function StudentDashboard() {
   const [resumes, setResumes] = useState([]);
@@ -103,8 +104,6 @@ function StudentDashboard() {
       }
 
       setSelectedAnalysis(data);
-
-      // 🔥 Expect roles only initially
       setRoles(data.analysis?.roles || []);
       setEvaluation(null);
       setSelectedRole(null);
@@ -154,52 +153,57 @@ function StudentDashboard() {
   };
 
   return (
-    <div>
-      <h2>Student Dashboard</h2>
+    <div className="student-wrap">
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {/* Upload Section */}
+      <div className="upload-section">
+        <h2>Student Dashboard</h2>
 
-      <h3>Upload Resume</h3>
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <form onSubmit={handleUpload}>
-        <input
-          type="file"
-          accept=".pdf,.doc,.docx"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-        <br />
-        <button type="submit">Upload</button>
-      </form>
+        <form onSubmit={handleUpload}>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => setFile(e.target.files[0])}
+          />
 
-      <p>{uploadMessage}</p>
+          <button type="submit">Upload Resume</button>
+        </form>
 
+        {uploadMessage && <p>{uploadMessage}</p>}
+      </div>
+
+      {/* Resume List */}
       <h3>Your Resumes</h3>
 
       {resumes.length === 0 ? (
-        <p>No resumes uploaded yet.</p>
+        <p style={{ textAlign: "center", color: "#cbd5e1" }}>
+          No resumes uploaded yet.
+        </p>
       ) : (
-        <ul>
+        <ul className="resume-list">
           {resumes.map((resume) => (
-            <li key={resume.resume_id}>
+            <li key={resume.resume_id} className="resume-card">
               <button onClick={() => fetchAnalysis(resume.resume_id)}>
                 {resume.filename}
               </button>
-              <br />
-              Uploaded at: {formatDate(resume.uploaded_at)}
+
+              <p>Uploaded at: {formatDate(resume.uploaded_at)}</p>
             </li>
           ))}
         </ul>
       )}
 
-      {/* ROLE SELECTION */}
+      {/* Role Selection */}
       {roles.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
+        <div className="role-selection-section">
           <h3>Select a Target Role</h3>
 
           {roles.map((r, idx) => (
             <button
               key={idx}
-              style={{ marginRight: "10px" }}
+              className="role-button"
               onClick={() => handleRoleSelection(r.role)}
             >
               {r.role} ({Math.round(r.confidence * 100)}%)
@@ -208,9 +212,9 @@ function StudentDashboard() {
         </div>
       )}
 
-      {/* ATS AFTER ROLE SELECTION */}
+      {/* Evaluation */}
       {evaluation && (
-        <div style={{ marginTop: "30px" }}>
+        <div className="evaluation-section">
           <h3>ATS Evaluation — {evaluation.target_role}</h3>
 
           <p>
@@ -223,14 +227,39 @@ function StudentDashboard() {
             {(evaluation.ats?.missing_skills?.core ||
               evaluation.ats?.missing_skills ||
               []).map((s, idx) => (
-              <li key={idx}>{s}</li>
-            ))}
+                <li key={idx}>{s}</li>
+              ))}
           </ul>
 
           <h4>Learning Path</h4>
-          <pre>{JSON.stringify(evaluation.learning_path, null, 2)}</pre>
+          <div className="learning-grid">
+            {evaluation.learning_path?.learning_path?.map((item, index) => (
+              <div key={index} className="learning-card">
+
+                <div className="skill-title">{item.skill}</div>
+                <div className="skill-level">{item.level}</div>
+
+                <strong>Focus Topics:</strong>
+                <ul>
+                  {item.focus_topics?.map((topic, i) => (
+                    <li key={i}>{topic}</li>
+                  ))}
+                </ul>
+
+                <strong>Projects:</strong>
+                <ul>
+                  {item.projects?.map((proj, i) => (
+                    <li key={i}>{proj}</li>
+                  ))}
+                </ul>
+
+              </div>
+            ))}
+          </div>
+
         </div>
       )}
+
     </div>
   );
 }
