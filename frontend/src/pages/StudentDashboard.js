@@ -5,12 +5,10 @@ import "./StudentDashboard.css";
 function StudentDashboard() {
   const [resumes, setResumes] = useState([]);
   const [error, setError] = useState("");
-  const [selectedAnalysis, setSelectedAnalysis] = useState(null);
   const [file, setFile] = useState(null);
   const [uploadMessage, setUploadMessage] = useState("");
 
   const [roles, setRoles] = useState([]);
-  const [selectedRole, setSelectedRole] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
   const [selectedResumeId, setSelectedResumeId] = useState(null);
 
@@ -103,10 +101,10 @@ function StudentDashboard() {
         return;
       }
 
-      setSelectedAnalysis(data);
+      
       setRoles(data.analysis?.roles || []);
       setEvaluation(null);
-      setSelectedRole(null);
+  
 
     } catch {
       alert("Server error");
@@ -114,7 +112,7 @@ function StudentDashboard() {
   };
 
   const handleRoleSelection = async (role) => {
-    setSelectedRole(role);
+    
 
     try {
       const response = await fetch(
