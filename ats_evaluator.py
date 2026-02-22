@@ -11,9 +11,18 @@ client = Groq(api_key=API_KEY)
 
 
 def _clean_json(content: str):
-    content = re.sub(r"```json|```", "", content).strip()
+    # Remove markdown code blocks
+    content = re.sub(r"```json|```", "", content)
+
+    # Remove // comments
+    content = re.sub(r"//.*", "", content)
+
+    # Remove trailing commas
+    content = re.sub(r",\s*([}\]])", r"\1", content)
+
+    # Extract JSON object
     match = re.search(r"\{.*\}", content, re.DOTALL)
-    return match.group(0) if match else content
+    return match.group(0).strip() if match else content.strip()
 
 
 def evaluate_ats(resume_data: dict, rag_context: list[str], target_role: str):

@@ -13,7 +13,7 @@ from role_detector import detect_roles
 
 
 # ================= CONFIG =================
-RESUME_PATH = "resumes/resume_0863.pdf"
+RESUME_PATH = "uploads/jaiakash.pdf"
 
 TARGET_ROLE = "backend Engineer"
 TARGET_DOMAIN = "Web Development"
