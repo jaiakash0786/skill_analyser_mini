@@ -52,7 +52,7 @@ function StudentDashboard() {
     formData.append("resume", file);
 
     try {
-      setUploadMessage("Uploading... ⏳");
+      setUploadMessage("Uploading... ");
 
       const response = await fetch(
         "http://127.0.0.1:8000/student/resume/upload",
